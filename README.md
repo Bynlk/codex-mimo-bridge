@@ -16,7 +16,7 @@ cd codex-mimo-bridge
 node index.js
 ```
 
-打开浏览器访问 **http://127.0.0.1:18742**，填入你的 API Key 和 Base URL，点击 **Start Proxy**。
+打开浏览器访问 http://127.0.0.1:18742 ，填入你的 API Key 和 Base URL，点击 **Start Proxy**。
 
 然后配置 Codex 使用代理：
 
