@@ -1,0 +1,11 @@
+{
+  "name": "codex-mimo-bridge",
+  "version": "1.0.0",
+  "description": "Bridge OpenAI Codex CLI with third-party APIs (mimo, DeepSeek, etc.)",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "keywords": ["codex", "mimo", "openai", "proxy", "bridge"],
+  "license": "MIT"
+}
