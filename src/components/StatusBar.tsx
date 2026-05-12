@@ -1,4 +1,5 @@
 import type { ProxyStatus } from "../types";
+import { useI18n } from "../i18n";
 
 interface Props {
   status: ProxyStatus;
@@ -7,6 +8,8 @@ interface Props {
 }
 
 export function StatusBar({ status, onStart, onStop }: Props) {
+  const { t } = useI18n();
+
   return (
     <div
       className="flex items-center justify-between rounded-xl border px-5 py-4"
@@ -16,7 +19,6 @@ export function StatusBar({ status, onStart, onStop }: Props) {
       }}
     >
       <div className="flex items-center gap-4">
-        {/* Status indicator */}
         <div className="flex items-center gap-2.5">
           <div className="relative">
             <div
@@ -36,33 +38,28 @@ export function StatusBar({ status, onStart, onStop }: Props) {
             className="text-sm font-medium"
             style={{ color: "var(--color-text-primary)" }}
           >
-            {status.running ? "Proxy Active" : "Proxy Stopped"}
+            {status.running ? t.proxyActive : t.proxyStopped}
           </span>
         </div>
 
-        {/* Divider */}
         <div className="h-4 w-px" style={{ background: "var(--color-border-default)" }} />
 
-        {/* Port */}
         <span className="font-mono text-xs" style={{ color: "var(--color-text-secondary)" }}>
           :{status.port}
         </span>
 
-        {/* Divider */}
         <div className="h-4 w-px" style={{ background: "var(--color-border-default)" }} />
 
-        {/* Request count */}
         <div className="flex items-center gap-1.5">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--color-text-tertiary)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
             <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
           </svg>
           <span className="font-mono text-xs" style={{ color: "var(--color-text-secondary)" }}>
-            {status.request_count} requests
+            {status.request_count} {t.requests}
           </span>
         </div>
       </div>
 
-      {/* Toggle button */}
       <button
         onClick={status.running ? onStop : onStart}
         className="flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-all duration-150"
@@ -83,7 +80,7 @@ export function StatusBar({ status, onStart, onStop }: Props) {
         ) : (
           <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21" /></svg>
         )}
-        {status.running ? "Stop" : "Start"}
+        {status.running ? t.stop : t.start}
       </button>
     </div>
   );

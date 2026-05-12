@@ -1,8 +1,10 @@
 import { useEffect, useState, useCallback } from "react";
 import type { LogEntry } from "../types";
 import { getLogs, clearLogs } from "../hooks/useProxy";
+import { useI18n } from "../i18n";
 
 export function LogViewer() {
+  const { t } = useI18n();
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [selected, setSelected] = useState<string | null>(null);
 
@@ -31,14 +33,13 @@ export function LogViewer() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-semibold tracking-tight" style={{ color: "var(--color-text-primary)" }}>
-            Request Logs
+            {t.logTitle}
           </h1>
           <p className="mt-1 text-sm" style={{ color: "var(--color-text-tertiary)" }}>
-            View proxied request and response details
+            {t.logDesc}
           </p>
         </div>
         <button
@@ -55,13 +56,11 @@ export function LogViewer() {
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
           </svg>
-          Clear All
+          {t.clearAll}
         </button>
       </div>
 
-      {/* Content */}
       <div className="flex gap-4" style={{ height: "calc(100vh - 220px)" }}>
-        {/* Log list */}
         <div
           className="w-80 flex-shrink-0 overflow-y-auto rounded-xl border"
           style={{
@@ -76,7 +75,7 @@ export function LogViewer() {
                 <path d="M14 2v6h6" />
               </svg>
               <p className="mt-3 text-sm" style={{ color: "var(--color-text-tertiary)" }}>
-                No logs
+                {t.noLogs}
               </p>
             </div>
           ) : (
@@ -116,7 +115,6 @@ export function LogViewer() {
           )}
         </div>
 
-        {/* Detail panel */}
         <div
           className="flex-1 overflow-y-auto rounded-xl border"
           style={{
@@ -130,12 +128,11 @@ export function LogViewer() {
                 <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
               </svg>
               <p className="mt-3 text-sm" style={{ color: "var(--color-text-tertiary)" }}>
-                Select a request to view details
+                {t.selectRequest}
               </p>
             </div>
           ) : (
             <div className="space-y-4 p-5">
-              {/* Meta */}
               <div className="flex items-center gap-3">
                 <span
                   className="rounded-md px-2 py-1 font-mono text-xs font-medium"
@@ -157,13 +154,12 @@ export function LogViewer() {
                 </span>
               </div>
 
-              {/* Request */}
               <div>
                 <h3 className="mb-2 flex items-center gap-2 text-xs font-medium uppercase tracking-wider" style={{ color: "var(--color-text-tertiary)" }}>
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" />
                   </svg>
-                  Request
+                  {t.request}
                 </h3>
                 <pre
                   className="overflow-x-auto rounded-lg border p-4 font-mono text-[11px] leading-relaxed"
@@ -178,13 +174,12 @@ export function LogViewer() {
                 </pre>
               </div>
 
-              {/* Response */}
               <div>
                 <h3 className="mb-2 flex items-center gap-2 text-xs font-medium uppercase tracking-wider" style={{ color: "var(--color-text-tertiary)" }}>
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
                   </svg>
-                  Response
+                  {t.response}
                 </h3>
                 <pre
                   className="overflow-x-auto rounded-lg border p-4 font-mono text-[11px] leading-relaxed"
@@ -195,7 +190,7 @@ export function LogViewer() {
                     maxHeight: "400px",
                   }}
                 >
-                  {formatJson(selectedLog.response_body)}
+                  {formatJson(selectedLog.response_body) || t.empty}
                 </pre>
               </div>
             </div>

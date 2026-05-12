@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import type { AppConfig } from "../types";
 import { getConfig, saveConfig } from "../hooks/useProxy";
+import { useI18n } from "../i18n";
 
 export function ConfigPanel() {
+  const { t } = useI18n();
   const [config, setConfig] = useState<AppConfig>({
     api_key: "",
     target_url: "https://api.openai.com",
@@ -23,17 +25,15 @@ export function ConfigPanel() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div>
         <h1 className="text-xl font-semibold tracking-tight" style={{ color: "var(--color-text-primary)" }}>
-          Configuration
+          {t.configTitle}
         </h1>
         <p className="mt-1 text-sm" style={{ color: "var(--color-text-tertiary)" }}>
-          Configure the proxy target and connection settings
+          {t.configDesc}
         </p>
       </div>
 
-      {/* Config form */}
       <div
         className="rounded-xl border p-5"
         style={{
@@ -42,7 +42,7 @@ export function ConfigPanel() {
         }}
       >
         <div className="space-y-5">
-          <FormField label="Target API URL" description="The base URL of the Chat Completions API">
+          <FormField label={t.targetUrl} description={t.targetUrlDesc}>
             <input
               type="text"
               value={config.target_url}
@@ -51,7 +51,7 @@ export function ConfigPanel() {
             />
           </FormField>
 
-          <FormField label="API Key" description="Authentication key for the target API">
+          <FormField label={t.apiKey} description={t.apiKeyDesc}>
             <input
               type="password"
               value={config.api_key}
@@ -61,7 +61,7 @@ export function ConfigPanel() {
           </FormField>
 
           <div className="grid grid-cols-2 gap-4">
-            <FormField label="Model" description="Override the model name">
+            <FormField label={t.model} description={t.modelDesc}>
               <input
                 type="text"
                 value={config.model}
@@ -70,7 +70,7 @@ export function ConfigPanel() {
               />
             </FormField>
 
-            <FormField label="Proxy Port" description="Local port for the proxy server">
+            <FormField label={t.proxyPort} description={t.proxyPortDesc}>
               <input
                 type="number"
                 value={config.proxy_port}
@@ -94,7 +94,7 @@ export function ConfigPanel() {
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M20 6L9 17l-5-5" />
                   </svg>
-                  Saved
+                  {t.saved}
                 </>
               ) : (
                 <>
@@ -102,7 +102,7 @@ export function ConfigPanel() {
                     <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z" />
                     <path d="M17 21v-8H7v8M7 3v5h8" />
                   </svg>
-                  Save Configuration
+                  {t.saveConfig}
                 </>
               )}
             </button>
@@ -110,7 +110,6 @@ export function ConfigPanel() {
         </div>
       </div>
 
-      {/* Codex CLI config snippet */}
       <div
         className="rounded-xl border p-5"
         style={{
@@ -123,11 +122,11 @@ export function ConfigPanel() {
             <path d="M16 18l6-6-6-6M8 6l-6 6 6 6" />
           </svg>
           <h2 className="text-sm font-medium" style={{ color: "var(--color-text-primary)" }}>
-            Codex CLI Configuration
+            {t.codexConfig}
           </h2>
         </div>
         <p className="mb-3 text-xs" style={{ color: "var(--color-text-tertiary)" }}>
-          Add this to your <code className="rounded px-1.5 py-0.5" style={{ background: "var(--color-surface-3)", color: "var(--color-text-secondary)" }}>~/.codex/config.toml</code>
+          {t.codexConfigDesc} <code className="rounded px-1.5 py-0.5" style={{ background: "var(--color-surface-3)", color: "var(--color-text-secondary)" }}>~/.codex/config.toml</code>
         </p>
         <pre
           className="overflow-x-auto rounded-lg border p-4 font-mono text-[13px] leading-relaxed"

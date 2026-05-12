@@ -2,8 +2,10 @@ import { useEffect, useState, useCallback } from "react";
 import { StatusBar } from "./StatusBar";
 import type { ProxyStatus, LogEntry } from "../types";
 import { getProxyStatus, getLogs, startProxy, stopProxy, clearLogs } from "../hooks/useProxy";
+import { useI18n } from "../i18n";
 
 export function Dashboard() {
+  const { t } = useI18n();
   const [status, setStatus] = useState<ProxyStatus>({ running: false, port: 8742, request_count: 0 });
   const [logs, setLogs] = useState<LogEntry[]>([]);
 
@@ -31,23 +33,20 @@ export function Dashboard() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div>
         <h1 className="text-xl font-semibold tracking-tight" style={{ color: "var(--color-text-primary)" }}>
-          Dashboard
+          {t.dashboardTitle}
         </h1>
         <p className="mt-1 text-sm" style={{ color: "var(--color-text-tertiary)" }}>
-          Monitor and control the API proxy
+          {t.dashboardDesc}
         </p>
       </div>
 
-      {/* Status bar */}
       <StatusBar status={status} onStart={handleStart} onStop={handleStop} />
 
-      {/* Stats cards */}
       <div className="grid grid-cols-3 gap-3">
         <StatCard
-          label="Total Requests"
+          label={t.totalRequests}
           value={status.request_count.toString()}
           icon={
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -56,7 +55,7 @@ export function Dashboard() {
           }
         />
         <StatCard
-          label="Successful"
+          label={t.successful}
           value={logs.filter((l) => l.status < 400).length.toString()}
           icon={
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -66,7 +65,7 @@ export function Dashboard() {
           accent
         />
         <StatCard
-          label="Errors"
+          label={t.errors}
           value={logs.filter((l) => l.status >= 400).length.toString()}
           icon={
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -78,7 +77,6 @@ export function Dashboard() {
         />
       </div>
 
-      {/* Recent requests */}
       <div
         className="rounded-xl border"
         style={{
@@ -91,7 +89,7 @@ export function Dashboard() {
           style={{ borderColor: "var(--color-border-subtle)" }}
         >
           <h2 className="text-sm font-medium" style={{ color: "var(--color-text-primary)" }}>
-            Recent Requests
+            {t.recentRequests}
           </h2>
           <button
             onClick={handleClear}
@@ -100,7 +98,7 @@ export function Dashboard() {
             onMouseEnter={(e) => { e.currentTarget.style.color = "var(--color-text-secondary)"; e.currentTarget.style.background = "var(--color-surface-3)"; }}
             onMouseLeave={(e) => { e.currentTarget.style.color = "var(--color-text-tertiary)"; e.currentTarget.style.background = "transparent"; }}
           >
-            Clear
+            {t.clear}
           </button>
         </div>
 
@@ -111,10 +109,10 @@ export function Dashboard() {
                 <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
               </svg>
               <p className="mt-3 text-sm" style={{ color: "var(--color-text-tertiary)" }}>
-                No requests yet
+                {t.noRequests}
               </p>
               <p className="mt-1 text-xs" style={{ color: "var(--color-text-tertiary)", opacity: 0.6 }}>
-                Start the proxy and send a request from Codex CLI
+                {t.noRequestsHint}
               </p>
             </div>
           ) : (
@@ -126,7 +124,6 @@ export function Dashboard() {
                 onMouseEnter={(e) => { e.currentTarget.style.background = "var(--color-surface-2)"; }}
                 onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
               >
-                {/* Status badge */}
                 <span
                   className="rounded-md px-2 py-0.5 font-mono text-[11px] font-medium"
                   style={{
@@ -136,24 +133,18 @@ export function Dashboard() {
                 >
                   {log.status}
                 </span>
-
-                {/* Method */}
                 <span
                   className="font-mono text-[11px] font-medium uppercase"
                   style={{ color: "var(--color-text-tertiary)" }}
                 >
                   {log.method}
                 </span>
-
-                {/* Path */}
                 <span
                   className="flex-1 truncate font-mono text-xs"
                   style={{ color: "var(--color-text-secondary)" }}
                 >
                   {log.path}
                 </span>
-
-                {/* Duration */}
                 <span
                   className="font-mono text-[11px]"
                   style={{ color: "var(--color-text-tertiary)" }}
