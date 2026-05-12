@@ -31,3 +31,6 @@ src-tauri/target/
 .env
 .env.*
 !.env.example
+
+# Config (contains API keys)
+config.json
