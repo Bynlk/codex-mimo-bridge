@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -209,10 +209,10 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
       <span class="app-tag">v1.0</span>
     </div>
     <div class="titlebar-right">
-      <button class="titlebar-btn" title="Minimize" onclick="minimizeWindow()">
+      <button class="titlebar-btn" title="最小化" onclick="minimizeWindow()">
         <svg width="10" height="1" viewBox="0 0 10 1"><rect width="10" height="1" fill="currentColor"/></svg>
       </button>
-      <button class="titlebar-btn close" title="Close" onclick="closeWindow()">
+      <button class="titlebar-btn close" title="关闭" onclick="closeWindow()">
         <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 1l8 8M9 1l-8 8"/></svg>
       </button>
     </div>
@@ -223,18 +223,18 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
     <!-- SIDEBAR -->
     <div class="sidebar">
       <div>
-        <div class="section-label">Connection</div>
+        <div class="section-label">连接配置</div>
         <div class="field">
-          <label>API Base URL</label>
+          <label>API 基础地址</label>
           <div class="input-wrap">
             <input type="text" id="baseUrl" value="https://token-plan-sgp.xiaomimimo.com/v1" spellcheck="false">
           </div>
         </div>
         <div class="field">
-          <label>API Key</label>
+          <label>API 密钥</label>
           <div class="input-wrap">
             <input type="password" id="apiKey" placeholder="tp-xxxxxxxxxxxx" spellcheck="false">
-            <button class="toggle-eye" onclick="toggleEye()" title="Show/Hide">
+            <button class="toggle-eye" onclick="toggleEye()" title="显示/隐藏">
               <svg id="eyeIcon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
               </svg>
@@ -244,16 +244,16 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
       </div>
 
       <div>
-        <div class="section-label">Proxy</div>
+        <div class="section-label">代理控制</div>
         <button class="proxy-toggle off" id="proxyBtn" onclick="toggleProxy()">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-          Start Proxy
+          启动代理
         </button>
       </div>
 
       <div style="margin-top:auto">
-        <div class="section-label">Quick Test</div>
-        <button class="log-btn" style="width:100%;height:32px" onclick="testConnection()">Test Connection</button>
+        <div class="section-label">快速测试</div>
+        <button class="log-btn" style="width:100%;height:32px" onclick="testConnection()">测试连接</button>
       </div>
     </div>
 
@@ -261,11 +261,11 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
     <div class="log-panel">
       <div class="log-header">
         <div class="log-header-left">
-          <span class="log-title">Proxy Logs</span>
+          <span class="log-title">代理日志</span>
           <span class="log-count" id="logCount">0</span>
         </div>
         <div class="log-header-right">
-          <button class="log-btn" onclick="clearLogs()">Clear</button>
+          <button class="log-btn" onclick="clearLogs()">清空</button>
         </div>
       </div>
       <div class="log-area" id="logArea">
@@ -273,7 +273,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
           <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="4 17 10 11 4 4"/><line x1="12" y1="19" x2="20" y2="19"/>
           </svg>
-          <span>Start the proxy to see logs</span>
+          <span>启动代理以查看日志</span>
         </div>
       </div>
     </div>
@@ -284,12 +284,12 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
     <div class="statusbar-left">
       <div class="statusbar-item">
         <span class="statusbar-dot off" id="statusDot"></span>
-        <span id="statusText">Stopped</span>
+        <span id="statusText">已停止</span>
       </div>
       <div class="statusbar-sep"></div>
-      <div class="statusbar-item">Port <span id="portDisplay">8742</span></div>
+      <div class="statusbar-item">端口 <span id="portDisplay">8742</span></div>
       <div class="statusbar-sep"></div>
-      <div class="statusbar-item">Requests <span id="reqCount">0</span></div>
+      <div class="statusbar-item">请求 <span id="reqCount">0</span></div>
     </div>
     <div class="statusbar-right">
       <div class="statusbar-item" id="uptimeDisplay"></div>
@@ -316,14 +316,14 @@ async function toggleProxy() {
   } else {
     const baseUrl = document.getElementById('baseUrl').value.trim();
     const apiKey = document.getElementById('apiKey').value.trim();
-    if (!baseUrl || !apiKey) { showToast('Please fill in Base URL and API Key', 'error'); return; }
+    if (!baseUrl || !apiKey) { showToast('请填写基础地址和 API 密钥', 'error'); return; }
     const res = await fetch(API + '/api/proxy/start', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ baseUrl, apiKey })
     });
     const data = await res.json();
-    if (!data.ok) { showToast(data.error || 'Failed to start', 'error'); return; }
+    if (!data.ok) { showToast(data.error || '启动失败', 'error'); return; }
   }
 }
 
@@ -346,16 +346,16 @@ function updateUI(status) {
 
   if (proxyRunning) {
     btn.className = 'proxy-toggle on';
-    btn.innerHTML = '<span class="status-dot on pulse-glow"></span> Stop Proxy';
+    btn.innerHTML = '<span class="status-dot on pulse-glow"></span> 停止代理';
     dot.className = 'statusbar-dot on';
-    statusText.textContent = 'Running';
+    statusText.textContent = '运行中';
     if (!wasRunning) startTime = Date.now();
     if (!uptimeInterval) uptimeInterval = setInterval(updateUptime, 1000);
   } else {
     btn.className = 'proxy-toggle off';
-    btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg> Start Proxy';
+    btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg> 启动代理';
     dot.className = 'statusbar-dot off';
-    statusText.textContent = 'Stopped';
+    statusText.textContent = '已停止';
     uptimeEl.textContent = '';
     if (uptimeInterval) { clearInterval(uptimeInterval); uptimeInterval = null; }
     startTime = null;
@@ -407,7 +407,7 @@ function appendLogLine(container, entry) {
 function clearLogs() {
   logEntries = [];
   const area = document.getElementById('logArea');
-  area.innerHTML = '<div class="log-empty"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 4"/><line x1="12" y1="19" x2="20" y2="19"/></svg><span>Start the proxy to see logs</span></div>';
+  area.innerHTML = '<div class="log-empty"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 4"/><line x1="12" y1="19" x2="20" y2="19"/></svg><span>启动代理以查看日志</span></div>';
   document.getElementById('logCount').textContent = '0';
 }
 
@@ -417,8 +417,8 @@ function escHtml(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replac
 async function testConnection() {
   const baseUrl = document.getElementById('baseUrl').value.trim();
   const apiKey = document.getElementById('apiKey').value.trim();
-  if (!baseUrl || !apiKey) { showToast('Please fill in Base URL and API Key', 'error'); return; }
-  showToast('Testing connection...', 'success');
+  if (!baseUrl || !apiKey) { showToast('请填写基础地址和 API 密钥', 'error'); return; }
+  showToast('正在测试连接...', 'success');
   try {
     const res = await fetch(API + '/api/test', {
       method: 'POST',
@@ -427,12 +427,12 @@ async function testConnection() {
     });
     const data = await res.json();
     if (data.ok) {
-      showToast(`Connected! ${data.models?.length || 0} models (${data.latencyMs}ms)`, 'success');
+      showToast(`连接成功！${data.models?.length || 0} 个模型（${data.latencyMs}ms）`, 'success');
     } else {
-      showToast(data.error || 'Connection failed', 'error');
+      showToast(data.error || '连接失败', 'error');
     }
   } catch(e) {
-    showToast('Network error', 'error');
+    showToast('网络错误', 'error');
   }
 }
 

@@ -3,9 +3,24 @@
   "version": "1.0.0",
   "description": "Bridge OpenAI Codex CLI with third-party APIs (mimo, DeepSeek, etc.)",
   "main": "index.js",
+  "bin": "index.js",
   "scripts": {
-    "start": "node index.js"
+    "start": "node index.js",
+    "build": "pkg . --targets node18-win-x64 --output dist/codex-mimo-bridge.exe"
   },
-  "keywords": ["codex", "mimo", "openai", "proxy", "bridge"],
-  "license": "MIT"
+  "pkg": {
+    "assets": ["web/**/*"],
+    "outputPath": "dist"
+  },
+  "keywords": [
+    "codex",
+    "mimo",
+    "openai",
+    "proxy",
+    "bridge"
+  ],
+  "license": "MIT",
+  "devDependencies": {
+    "@yao-pkg/pkg": "^6.19.0"
+  }
 }
