@@ -340,7 +340,120 @@ pub fn chat_to_responses(resp: &ChatCompletionResponse) -> ResponsesResponse {
 }
 
 // ---------------------------------------------------------------------------
-// 7. Unit tests
+// 7. Streaming types
+// ---------------------------------------------------------------------------
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ChatCompletionChunk {
+    pub id: String,
+    pub object: String,
+    pub created: u64,
+    pub model: String,
+    pub choices: Vec<ChatChunkChoice>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ChatChunkChoice {
+    pub index: u64,
+    pub delta: ChatDelta,
+    pub finish_reason: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ChatDelta {
+    pub role: Option<String>,
+    pub content: Option<String>,
+    pub tool_calls: Option<Vec<ChatToolCallDelta>>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ChatToolCallDelta {
+    pub index: u64,
+    pub id: Option<String>,
+    #[serde(rename = "type")]
+    pub call_type: Option<String>,
+    pub function: Option<ChatFunctionDelta>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ChatFunctionDelta {
+    pub name: Option<String>,
+    pub arguments: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ResponsesStreamEvent {
+    pub event: String,
+    pub data: Value,
+}
+
+// ---------------------------------------------------------------------------
+// 8. Conversion: Chat Completions chunk -> Responses API stream events
+// ---------------------------------------------------------------------------
+
+/// Convert a Chat Completions streaming chunk into one or more Responses API
+/// stream events.
+pub fn chat_chunk_to_responses_event(chunk: &ChatCompletionChunk) -> Vec<ResponsesStreamEvent> {
+    let mut events = Vec::new();
+
+    for choice in &chunk.choices {
+        let output_index = choice.index;
+
+        // Emit text delta if content is present and non-empty
+        if let Some(ref content) = choice.delta.content {
+            if !content.is_empty() {
+                events.push(ResponsesStreamEvent {
+                    event: "response.output_text.delta".to_string(),
+                    data: serde_json::json!({
+                        "type": "response.output_text.delta",
+                        "output_index": output_index,
+                        "content_index": 0,
+                        "delta": content,
+                    }),
+                });
+            }
+        }
+
+        // Emit tool call deltas
+        if let Some(ref tool_calls) = choice.delta.tool_calls {
+            for tc in tool_calls {
+                events.push(ResponsesStreamEvent {
+                    event: "response.output_function_call.delta".to_string(),
+                    data: serde_json::json!({
+                        "type": "response.output_function_call.delta",
+                        "output_index": output_index,
+                        "call_id": tc.id,
+                        "name": tc.function.as_ref().and_then(|f| f.name.as_ref()),
+                        "arguments": tc.function.as_ref().and_then(|f| f.arguments.as_ref()),
+                    }),
+                });
+            }
+        }
+
+        // Emit completion event if finish_reason is set
+        if choice.finish_reason.is_some() {
+            events.push(ResponsesStreamEvent {
+                event: "response.done".to_string(),
+                data: serde_json::json!({
+                    "type": "response.done",
+                    "response": {
+                        "id": chunk.id,
+                        "object": "response",
+                        "created_at": chunk.created,
+                        "model": chunk.model,
+                        "output": [],
+                        "status": "completed",
+                    }
+                }),
+            });
+        }
+    }
+
+    events
+}
+
+// ---------------------------------------------------------------------------
+// 9. Unit tests
 // ---------------------------------------------------------------------------
 
 #[cfg(test)]

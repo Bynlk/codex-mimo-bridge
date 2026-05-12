@@ -1,16 +1,24 @@
 use axum::{
     extract::State as AxumState,
     http::{HeaderMap, StatusCode},
-    response::{IntoResponse, Response},
+    response::{
+        sse::{Event, Sse},
+        IntoResponse, Response,
+    },
     routing::post,
     Json, Router,
 };
+use futures::stream::Stream;
+use std::convert::Infallible;
 use std::sync::Arc;
 use std::time::Instant;
 use tokio::sync::oneshot;
 use tower_http::cors::CorsLayer;
 
-use crate::convert::{chat_to_responses, responses_to_chat, ChatCompletionResponse, ResponsesRequest};
+use crate::convert::{
+    chat_chunk_to_responses_event, chat_to_responses, responses_to_chat,
+    ChatCompletionChunk, ChatCompletionResponse, ResponsesRequest,
+};
 use crate::state::{AppState, LogEntry};
 
 /// Shared context passed to every request handler.
@@ -31,6 +39,7 @@ pub struct ProxyHandle {
 pub fn create_proxy_router(ctx: ProxyContext) -> Router {
     Router::new()
         .route("/v1/responses", post(handle_responses))
+        .route("/v1/responses/stream", post(handle_responses_stream))
         .route("/health", axum::routing::get(handle_health).post(handle_health))
         .layer(CorsLayer::permissive())
         .with_state(ctx)
@@ -133,6 +142,139 @@ async fn handle_responses(
             (StatusCode::BAD_GATEWAY, "Bad gateway").into_response()
         }
     }
+}
+
+/// Type alias for boxed SSE stream to unify different stream sources.
+type BoxedSseStream = std::pin::Pin<Box<dyn Stream<Item = Result<Event, Infallible>> + Send>>;
+
+/// Streaming handler: receives a Responses API request, converts it, forwards to
+/// the upstream Chat Completions API with `stream: true`, and returns an SSE stream
+/// of Responses API stream events.
+async fn handle_responses_stream(
+    AxumState(ctx): AxumState<ProxyContext>,
+    headers: HeaderMap,
+    Json(body): Json<ResponsesRequest>,
+) -> Sse<BoxedSseStream> {
+    // Convert the Responses API request into a Chat Completions request.
+    let mut chat_req = responses_to_chat(&body);
+    chat_req.stream = Some(true);
+
+    // Override the model if the proxy context specifies one.
+    if let Some(ref model) = ctx.model {
+        chat_req.model = model.clone();
+    }
+
+    // Determine the authorization header to forward.
+    let auth_value = headers
+        .get("authorization")
+        .and_then(|v| v.to_str().ok())
+        .map(|s| s.to_string())
+        .unwrap_or_else(|| format!("Bearer {}", ctx.api_key));
+
+    // Build the upstream URL.
+    let upstream_url = format!("{}/v1/chat/completions", ctx.target_url.trim_end_matches('/'));
+
+    // Serialize the request body.
+    let request_body = match serde_json::to_string(&chat_req) {
+        Ok(b) => b,
+        Err(e) => {
+            log::error!("Failed to serialize chat request: {}", e);
+            return Sse::new(Box::pin(async_stream::stream! {
+                yield Ok(Event::default().data(r#"{"error":"internal error"}"#));
+            }));
+        }
+    };
+
+    // Forward the request to the upstream API.
+    let client = reqwest::Client::new();
+    let upstream_resp = match client
+        .post(&upstream_url)
+        .header("Authorization", &auth_value)
+        .header("Content-Type", "application/json")
+        .body(request_body)
+        .send()
+        .await
+    {
+        Ok(r) => r,
+        Err(e) => {
+            log::error!("Connection to upstream failed: {}", e);
+            return Sse::new(Box::pin(async_stream::stream! {
+                yield Ok(Event::default().data(r#"{"error":"bad gateway"}"#));
+            }));
+        }
+    };
+
+    if upstream_resp.status().as_u16() >= 400 {
+        let status = upstream_resp.status();
+        let err_text = upstream_resp.text().await.unwrap_or_default();
+        log::error!("Upstream returned error {}: {}", status, err_text);
+        let status_code = status.as_u16();
+        return Sse::new(Box::pin(async_stream::stream! {
+            yield Ok(Event::default().data(format!(r#"{{"error":"upstream error {}"}}"#, status_code)));
+        }));
+    }
+
+    // Stream the response body from upstream, parse SSE lines, and convert
+    // each Chat Completions chunk into Responses API stream events.
+    let byte_stream = upstream_resp.bytes_stream();
+
+    let event_stream = async_stream::stream! {
+        use futures::StreamExt;
+
+        let mut buffer = String::new();
+        let mut pinned = std::pin::pin!(byte_stream);
+
+        while let Some(chunk_result) = pinned.next().await {
+            let chunk = match chunk_result {
+                Ok(c) => c,
+                Err(e) => {
+                    log::error!("Error reading upstream stream: {}", e);
+                    break;
+                }
+            };
+
+            buffer.push_str(&String::from_utf8_lossy(&chunk));
+
+            // Process complete lines from the buffer
+            while let Some(newline_pos) = buffer.find('\n') {
+                let line = buffer[..newline_pos].trim().to_string();
+                buffer = buffer[newline_pos + 1..].to_string();
+
+                if line.is_empty() {
+                    continue;
+                }
+
+                // Check for [DONE] marker
+                if line == "data: [DONE]" {
+                    yield Ok(Event::default().event("response.completed").data(r#"{"type":"response.completed"}"#));
+                    continue;
+                }
+
+                // Parse "data: ..." lines
+                if let Some(data_str) = line.strip_prefix("data: ") {
+                    match serde_json::from_str::<ChatCompletionChunk>(data_str) {
+                        Ok(chunk) => {
+                            let events = chat_chunk_to_responses_event(&chunk);
+                            for evt in events {
+                                let event_name = evt.event.clone();
+                                let event_data = serde_json::to_string(&evt.data).unwrap_or_default();
+                                yield Ok(Event::default().event(&event_name).data(&event_data));
+                            }
+                        }
+                        Err(e) => {
+                            log::warn!("Failed to parse SSE chunk: {} (data: {})", e, data_str);
+                        }
+                    }
+                }
+            }
+        }
+
+        // If we exit the loop without seeing [DONE], emit a final completion event
+        yield Ok(Event::default().event("response.completed").data(r#"{"type":"response.completed"}"#));
+    };
+
+    let stream: BoxedSseStream = Box::pin(event_stream);
+    Sse::new(stream).keep_alive(axum::response::sse::KeepAlive::default())
 }
 
 /// Log a completed request to the application state.
