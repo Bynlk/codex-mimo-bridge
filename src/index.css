@@ -1,1 +1,54 @@
 @import "tailwindcss";
+
+@theme {
+  --font-sans: "DM Sans", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", "Fira Code", monospace;
+
+  --color-surface-0: #0a0a0c;
+  --color-surface-1: #111114;
+  --color-surface-2: #18181c;
+  --color-surface-3: #1f1f24;
+  --color-surface-4: #26262c;
+
+  --color-border-subtle: #1f1f24;
+  --color-border-default: #2a2a30;
+  --color-border-strong: #3a3a42;
+
+  --color-text-primary: #e8e8ec;
+  --color-text-secondary: #8b8b96;
+  --color-text-tertiary: #5a5a66;
+
+  --color-accent: #34d399;
+  --color-accent-dim: rgba(52, 211, 153, 0.12);
+  --color-accent-glow: rgba(52, 211, 153, 0.25);
+
+  --color-danger: #f87171;
+  --color-danger-dim: rgba(248, 113, 113, 0.12);
+
+  --color-warning: #fbbf24;
+}
+
+@layer base {
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-surface-4) transparent;
+  }
+
+  body {
+    margin: 0;
+    background: var(--color-surface-0);
+    color: var(--color-text-primary);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    overflow: hidden;
+  }
+
+  ::selection {
+    background: var(--color-accent-glow);
+    color: var(--color-text-primary);
+  }
+
+  input, textarea, pre, code {
+    font-family: var(--font-mono);
+  }
+}
